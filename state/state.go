@@ -1,4 +1,4 @@
-package jcp
+package state
 
 type CopierState struct {
 	CopyStates map[CopyStateKey]*CopyState
