@@ -10,8 +10,8 @@ type FileStateSourceKey = string
 type FileStateDestinationKey = string
 
 type CopyState struct {
-	FileStates     map[FileStateSourceKey]map[FileStateDestinationKey]FileCopyState
-	DiscoveryState []string
+	ActiveCopies   map[FileStateSourceKey]map[FileStateDestinationKey]FileCopyState
+	DiscoveryQueue []string
 }
 
 type FileCopyState struct {
