@@ -1,7 +1,7 @@
 package state
 
 type CopierState struct {
-	CopyStates map[CopyStateKey]*CopyState
+	CopyStates map[CopyStateKey]CopyState
 }
 
 type CopyStateKey struct {
@@ -10,7 +10,7 @@ type CopyStateKey struct {
 }
 
 type CopyState struct {
-	FileStates     map[FileStateKey]*FileCopyState
+	FileStates     map[FileStateKey]FileCopyState
 	DiscoveryState []string
 }
 

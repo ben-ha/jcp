@@ -35,9 +35,9 @@ func (copierState *CopierState) StartCopy(source string, destination string) *Co
 		Destination: destination,
 	}
 
-	newState := &CopyState{}
+	newState := CopyState{}
 	copierState.CopyStates[newCopyKey] = newState
-	return newState
+	return &newState
 }
 
 func (copierState *CopierState) EndCopy(copyState *CopyState) {
