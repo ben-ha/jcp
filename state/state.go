@@ -1,22 +1,17 @@
 package state
 
 type CopierState struct {
-	CopyStates map[CopyStateKey]CopyState
+	CopyStates map[CopySourceKey](map[CopyDestinationKey]CopyState)
 }
 
-type CopyStateKey struct {
-	Source      string
-	Destination string
-}
+type CopySourceKey = string
+type CopyDestinationKey = string
+type FileStateSourceKey = string
+type FileStateDestinationKey = string
 
 type CopyState struct {
-	FileStates     map[FileStateKey]FileCopyState
+	FileStates     map[FileStateSourceKey]map[FileStateDestinationKey]FileCopyState
 	DiscoveryState []string
-}
-
-type FileStateKey struct {
-	Source      string
-	Destination string
 }
 
 type FileCopyState struct {

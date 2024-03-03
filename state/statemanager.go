@@ -30,13 +30,12 @@ func (copierState *CopierState) StartCopy(source string, destination string) *Co
 	stateManagerMutex.Lock()
 	defer stateManagerMutex.Unlock()
 
-	newCopyKey := CopyStateKey{
-		Source:      source,
-		Destination: destination,
+	newState := CopyState{}
+	if copierState.CopyStates[source] == nil {
+		copierState.CopyStates[source] = map[CopyDestinationKey]CopyState{}
 	}
 
-	newState := CopyState{}
-	copierState.CopyStates[newCopyKey] = newState
+	copierState.CopyStates[source][destination] = newState
 	return &newState
 }
 
