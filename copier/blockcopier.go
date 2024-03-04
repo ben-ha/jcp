@@ -65,3 +65,7 @@ func (copier BlockCopier) Copy(source string, destination string, state CopierSt
 
 	return CopierState{State: concreteState, Error: nil}
 }
+
+func (state BlockCopierState) IsDone() bool {
+	return state.Size == state.BytesTransferred
+}
