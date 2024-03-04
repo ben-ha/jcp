@@ -52,8 +52,25 @@ func TestCopyFileProgress(t *testing.T) {
 
 func TestResumeCopy(t *testing.T) {
 	expectedData := "Hello world!"
+	partialData := expectedData[0:3]
 	sourceFile := prepareFile(expectedData)
-	partialDestFile := prepareFile(expectedData[0:3])
+	partialDestFile := prepareFile(partialData)
+
+	copier := BlockCopier{BlockSize: 1}
+	copierState := CopierState{State: BlockCopierState{Size: uint64(len(expectedData)), BytesTransferred: uint64(len(partialData))}}
+
+	newState := copier.Copy(sourceFile, partialDestFile, copierState)
+
+	if newState.Error != nil {
+		t.Fatalf("Unexpected error occurred: %v", (*newState.Error).Error())
+	}
+
+	actualDataBytes, _ := os.ReadFile(partialDestFile)
+	actualData := string(actualDataBytes)
+
+	if actualData != expectedData {
+		t.Fatalf("Received different data. Expected=%v, Actual=%v", expectedData, actualData)
+	}
 }
 
 func prepareFile(data string) string {
