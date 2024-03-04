@@ -23,6 +23,13 @@ func (copier BlockCopier) CopyWithProgress(source string, destination string, st
 	if progress != nil {
 		defer close(progress)
 	}
+
+	concreteState, castOK := state.State.(BlockCopierState)
+	if !castOK {
+		castErr := fmt.Errorf("converting to BlockCopierState failed")
+		return CopierState{State: state.State, Error: &castErr}
+	}
+
 	inputFile, inputErr := os.Open(source)
 	if inputErr != nil {
 		return CopierState{State: state.State, Error: &inputErr}
@@ -30,18 +37,21 @@ func (copier BlockCopier) CopyWithProgress(source string, destination string, st
 
 	defer inputFile.Close()
 
+	if concreteState.Size == 0 {
+		stat, statErr := inputFile.Stat()
+		if statErr != nil {
+			return CopierState{State: state.State, Error: &statErr}
+		}
+
+		concreteState.Size = uint64(stat.Size())
+	}
+
 	outputFile, outputErr := os.OpenFile(destination, os.O_CREATE|os.O_RDWR, os.ModePerm)
 	if outputErr != nil {
 		return CopierState{State: state.State, Error: &outputErr}
 	}
 
 	defer outputFile.Close()
-
-	concreteState, castOK := state.State.(BlockCopierState)
-	if !castOK {
-		castErr := fmt.Errorf("converting to BlockCopierState failed")
-		return CopierState{State: state.State, Error: &castErr}
-	}
 
 	_, seekErr := inputFile.Seek(int64(concreteState.BytesTransferred), 0)
 	if seekErr != nil {

@@ -31,7 +31,7 @@ func TestCopyFileProgress(t *testing.T) {
 	destFile := prepareTemporaryFileName()
 
 	copier := BlockCopier{BlockSize: 1}
-	progressChannel := make(chan CopierProgress)
+	progressChannel := make(chan CopierProgress, 100)
 	newState := copier.CopyWithProgress(sourceFile, destFile, CopierState{State: BlockCopierState{}}, progressChannel)
 
 	if newState.Error != nil {
