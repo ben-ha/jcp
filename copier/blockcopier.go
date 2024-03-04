@@ -1,12 +1,12 @@
 package copier
 
 import (
-	"errors"
+	"fmt"
+	"io"
 	"os"
 )
 
-type BlockCopier struct
-{
+type BlockCopier struct {
 	BlockSize uint64
 }
 
@@ -27,7 +27,7 @@ func (copier BlockCopier) Copy(source string, destination string, state CopierSt
 
 	concreteState, castOK := state.State.(BlockCopierState)
 	if !castOK {
-		castErr := errors.New("Converting to BlockCopierState failed")
+		castErr := fmt.Errorf("converting to BlockCopierState failed")
 		return CopierState{State: state.State, Error: &castErr}
 	}
 
@@ -40,4 +40,28 @@ func (copier BlockCopier) Copy(source string, destination string, state CopierSt
 	if seekErr != nil {
 		return CopierState{State: state.State, Error: &seekErr}
 	}
+
+	var readErr *error = nil
+	blockBuffer := make([]byte, copier.BlockSize)
+	for readErr == nil {
+		read, err := inputFile.Read(blockBuffer)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return CopierState{State: concreteState, Error: &err}
+		}
+		written, writeErr := outputFile.Write(blockBuffer[0:read])
+		if writeErr != nil {
+			return CopierState{State: concreteState, Error: &writeErr}
+		}
+
+		if read != written {
+			blockDifferent := fmt.Errorf("write size is different: read=%v, write=%v", read, written)
+			return CopierState{State: concreteState, Error: &blockDifferent}
+		}
+		concreteState.BytesTransferred += uint64(read)
+	}
+
+	return CopierState{State: concreteState, Error: nil}
 }
