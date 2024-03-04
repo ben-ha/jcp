@@ -50,6 +50,12 @@ func TestCopyFileProgress(t *testing.T) {
 	}
 }
 
+func TestResumeCopy(t *testing.T) {
+	expectedData := "Hello world!"
+	sourceFile := prepareFile(expectedData)
+	partialDestFile := prepareFile(expectedData[0:3])
+}
+
 func prepareFile(data string) string {
 	f, _ := os.CreateTemp("", "block_copier_test")
 	_, _ = f.WriteString(data)
