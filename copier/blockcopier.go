@@ -20,10 +20,15 @@ func (copier BlockCopier) Copy(source string, destination string, state CopierSt
 	if inputErr != nil {
 		return CopierState{State: state.State, Error: &inputErr}
 	}
+
+	defer inputFile.Close()
+
 	outputFile, outputErr := os.OpenFile(destination, os.O_CREATE|os.O_RDWR, os.ModePerm)
 	if outputErr != nil {
 		return CopierState{State: state.State, Error: &outputErr}
 	}
+
+	defer outputFile.Close()
 
 	concreteState, castOK := state.State.(BlockCopierState)
 	if !castOK {
