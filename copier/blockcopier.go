@@ -15,7 +15,14 @@ type BlockCopierState struct {
 	BytesTransferred uint64
 }
 
+func (copier BlockCopier) Copy(source string, destination string, state CopierState) CopierState {
+	return copier.CopyWithProgress(source, destination, state, nil)
+}
+
 func (copier BlockCopier) CopyWithProgress(source string, destination string, state CopierState, progress chan<- CopierProgress) CopierState {
+	if progress != nil {
+		defer close(progress)
+	}
 	inputFile, inputErr := os.Open(source)
 	if inputErr != nil {
 		return CopierState{State: state.State, Error: &inputErr}
@@ -81,5 +88,5 @@ func reportProgress(progressChan chan<- CopierProgress, currentState BlockCopier
 	if progressChan == nil {
 		return
 	}
-	progressChan <- CopierProgress{ Size: currentState.Size, BytesTransferred: currentState.BytesTransferred }
+	progressChan <- CopierProgress{Size: currentState.Size, BytesTransferred: currentState.BytesTransferred}
 }
