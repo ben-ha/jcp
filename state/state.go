@@ -17,4 +17,5 @@ type CopyState struct {
 type FileCopyState struct {
 	Size             uint64
 	BytesTransferred uint64
+	err              error
 }
