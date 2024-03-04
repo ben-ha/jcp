@@ -46,6 +46,7 @@ func (copier BlockCopier) CopyWithProgress(source string, destination string, st
 		return CopierState{State: state.State, Error: &seekErr}
 	}
 
+	reportProgress(progress, concreteState)
 	var readErr *error = nil
 	blockBuffer := make([]byte, copier.BlockSize)
 	for readErr == nil {
@@ -66,6 +67,7 @@ func (copier BlockCopier) CopyWithProgress(source string, destination string, st
 			return CopierState{State: concreteState, Error: &blockDifferent}
 		}
 		concreteState.BytesTransferred += uint64(read)
+		reportProgress(progress, concreteState)
 	}
 
 	return CopierState{State: concreteState, Error: nil}
@@ -75,6 +77,9 @@ func (state BlockCopierState) IsDone() bool {
 	return state.Size == state.BytesTransferred
 }
 
-func (progressChan chan CopierProgress) ReportProgress(progress chan<- CopierProgress, newProgress CopierProgress) {
-	
+func reportProgress(progressChan chan<- CopierProgress, currentState BlockCopierState) {
+	if progressChan == nil {
+		return
+	}
+	progressChan <- CopierProgress{ Size: currentState.Size, BytesTransferred: currentState.BytesTransferred }
 }
