@@ -1,5 +1,5 @@
 package discovery
 
 type Discoverer interface {
-	Next() (string, error)
+	Next() (FileInformation, error)
 }

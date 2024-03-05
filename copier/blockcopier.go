@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	discovery "github.com/ben-ha/jcp/discovery"
 )
 
 type BlockCopier struct {
@@ -15,11 +16,11 @@ type BlockCopierState struct {
 	BytesTransferred uint64
 }
 
-func (copier BlockCopier) Copy(source string, destination string, state CopierState) CopierState {
+func (copier BlockCopier) Copy(source discovery.FileInformation, destination discovery.FileInformation, state CopierState) CopierState {
 	return copier.CopyWithProgress(source, destination, state, nil)
 }
 
-func (copier BlockCopier) CopyWithProgress(source string, destination string, state CopierState, progress chan<- CopierProgress) CopierState {
+func (copier BlockCopier) CopyWithProgress(source discovery.FileInformation, destination discovery.FileInformation, state CopierState, progress chan<- CopierProgress) CopierState {
 	if progress != nil {
 		defer close(progress)
 	}
@@ -30,23 +31,16 @@ func (copier BlockCopier) CopyWithProgress(source string, destination string, st
 		return CopierState{State: state.State, Error: &castErr}
 	}
 
-	inputFile, inputErr := os.Open(source)
+	inputFile, inputErr := os.Open(source.FullPath)
 	if inputErr != nil {
 		return CopierState{State: state.State, Error: &inputErr}
 	}
 
 	defer inputFile.Close()
 
-	if concreteState.Size == 0 {
-		stat, statErr := inputFile.Stat()
-		if statErr != nil {
-			return CopierState{State: state.State, Error: &statErr}
-		}
+	concreteState.Size = uint64(source.Info.Size())
 
-		concreteState.Size = uint64(stat.Size())
-	}
-
-	outputFile, outputErr := os.OpenFile(destination, os.O_CREATE|os.O_RDWR, os.ModePerm)
+	outputFile, outputErr := os.OpenFile(destination.FullPath, os.O_CREATE|os.O_RDWR, os.ModePerm)
 	if outputErr != nil {
 		return CopierState{State: state.State, Error: &outputErr}
 	}

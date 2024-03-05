@@ -3,6 +3,7 @@ package copier
 import (
 	"os"
 	"testing"
+	discovery "github.com/ben-ha/jcp/discovery"
 )
 
 func TestCopyFile(t *testing.T) {
@@ -11,7 +12,8 @@ func TestCopyFile(t *testing.T) {
 	destFile := prepareTemporaryFileName()
 
 	copier := BlockCopier{BlockSize: 512}
-	newState := copier.Copy(sourceFile, destFile, CopierState{State: BlockCopierState{}})
+	sourceInfo, _ := discovery.MakeFileInformation(sourceFile)
+	newState := copier.Copy(sourceInfo, discovery.FileInformation{FullPath: destFile, Info: nil}, CopierState{State: BlockCopierState{}})
 
 	if newState.Error != nil {
 		t.Fatalf("Unexpected error occurred: %v", (*newState.Error).Error())
@@ -32,7 +34,8 @@ func TestCopyFileProgress(t *testing.T) {
 
 	copier := BlockCopier{BlockSize: 1}
 	progressChannel := make(chan CopierProgress, 100)
-	newState := copier.CopyWithProgress(sourceFile, destFile, CopierState{State: BlockCopierState{}}, progressChannel)
+	sourceInfo, _ := discovery.MakeFileInformation(sourceFile)
+	newState := copier.CopyWithProgress(sourceInfo, discovery.FileInformation{FullPath: destFile, Info: nil}, CopierState{State: BlockCopierState{}}, progressChannel)
 
 	if newState.Error != nil {
 		t.Fatalf("Unexpected error occurred: %v", (*newState.Error).Error())
@@ -59,7 +62,8 @@ func TestResumeCopy(t *testing.T) {
 	copier := BlockCopier{BlockSize: 1}
 	copierState := CopierState{State: BlockCopierState{Size: uint64(len(expectedData)), BytesTransferred: uint64(len(partialData))}}
 
-	newState := copier.Copy(sourceFile, partialDestFile, copierState)
+	sourceInfo, _ := discovery.MakeFileInformation(sourceFile)
+	newState := copier.Copy(sourceInfo, discovery.FileInformation{FullPath: partialDestFile, Info: MakeFakeDestinationFileInfo(partialDestFile, 3)}, copierState)
 
 	if newState.Error != nil {
 		t.Fatalf("Unexpected error occurred: %v", (*newState.Error).Error())
