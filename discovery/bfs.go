@@ -3,8 +3,8 @@ package discovery
 import (
 	"fmt"
 	"io"
-	"path/filepath"
 	"os"
+	"path/filepath"
 )
 
 type bfsDiscoverer struct {
