@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,10 +20,13 @@ func TestDiscoverySanity(t *testing.T) {
 
 	bfs, _ := MakeBfsDiscoverer(fileEntries[0].FullPath)
 
-	for i := 0; i < len(fileEntries); i++ {
+	for len(fileEntries) > 0 {
 		res, err := bfs.Next()
 		assert.Nil(t, err)
-		assert.Equal(t, fileEntries[i], res)
+		assert.Contains(t, fileEntries, res)
+		idx := slices.IndexFunc(fileEntries, func(ent FileInformation) bool { return ent.FullPath == res.FullPath })
+		assert.NotEqual(t, -1, idx)
+		fileEntries = slices.Delete(fileEntries, idx, idx+1)
 	}
 
 	res, err := bfs.Next()

@@ -18,19 +18,19 @@ type BfsState struct {
 func MakeBfsDiscoverer(basePath string) (Discoverer, error) {
 	baseInfo, baseInfoErr := MakeFileInformation(basePath)
 	if baseInfoErr != nil {
-		return bfsDiscoverer{}, baseInfoErr
+		return nil, baseInfoErr
 	}
 
 	initialState := BfsState{Queue: []FileInformation{baseInfo}}
 
 	if !baseInfo.Info.IsDir() && !baseInfo.Info.Mode().IsRegular() {
-		return bfsDiscoverer{}, fmt.Errorf("%v is an unsupported file", basePath)
+		return nil, fmt.Errorf("%v is an unsupported file", basePath)
 	}
 
-	return bfsDiscoverer{State: initialState}, nil
+	return &bfsDiscoverer{State: initialState}, nil
 }
 
-func (bfs bfsDiscoverer) Next() (FileInformation, error) {
+func (bfs *bfsDiscoverer) Next() (FileInformation, error) {
 	if len(bfs.State.Queue) == 0 {
 		return FileInformation{}, io.EOF
 	}
