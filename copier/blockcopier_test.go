@@ -18,7 +18,7 @@ func TestCopyFile(t *testing.T) {
 	newState := copier.Copy(sourceInfo, discovery.FileInformation{FullPath: destFile, Info: nil}, CopierState{State: BlockCopierState{}})
 
 	if newState.Error != nil {
-		t.Fatalf("Unexpected error occurred: %v", (*newState.Error).Error())
+		t.Fatalf("Unexpected error occurred: %v", newState.Error.Error())
 	}
 
 	actualDataBytes, _ := os.ReadFile(destFile)
@@ -40,7 +40,7 @@ func TestCopyFileProgress(t *testing.T) {
 	newState := copier.CopyWithProgress(sourceInfo, discovery.FileInformation{FullPath: destFile, Info: nil}, CopierState{State: BlockCopierState{}}, progressChannel)
 
 	if newState.Error != nil {
-		t.Fatalf("Unexpected error occurred: %v", (*newState.Error).Error())
+		t.Fatalf("Unexpected error occurred: %v", newState.Error.Error())
 	}
 
 	currentBlockTransferred := uint64(0)
@@ -66,7 +66,7 @@ func TestResumeCopy(t *testing.T) {
 	newState := copier.Copy(sourceInfo, discovery.FileInformation{FullPath: partialDestFile, Info: MakeFakeDestinationFileInfo(partialDestFile, 3)}, copierState)
 
 	if newState.Error != nil {
-		t.Fatalf("Unexpected error occurred: %v", (*newState.Error).Error())
+		t.Fatalf("Unexpected error occurred: %v", newState.Error.Error())
 	}
 
 	actualDataBytes, _ := os.ReadFile(partialDestFile)

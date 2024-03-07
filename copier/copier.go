@@ -10,7 +10,7 @@ type Copier interface {
 }
 
 type CopierState struct {
-	Error *error
+	Error error
 	State any
 }
 
@@ -19,4 +19,5 @@ type CopierProgress struct {
 	Dest             string
 	Size             uint64
 	BytesTransferred uint64
+	Error            error
 }
