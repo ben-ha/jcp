@@ -3,7 +3,9 @@ package copier
 import (
 	"os"
 	"testing"
+
 	discovery "github.com/ben-ha/jcp/discovery"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCopyFile(t *testing.T) {
@@ -43,12 +45,10 @@ func TestCopyFileProgress(t *testing.T) {
 
 	currentBlockTransferred := uint64(0)
 	for data := range progressChannel {
-		if data.BytesTransferred != currentBlockTransferred {
-			t.Fatalf("Unexpected progress. Expected=%v, actual=%v", currentBlockTransferred, data.BytesTransferred)
-		}
-		if data.Size != uint64(len(expectedData)) {
-			t.Fatalf("Unexpected size. Expected = %v, actual = %v", len(expectedData), data.Size)
-		}
+		assert.Equal(t, data.BytesTransferred, data.BytesTransferred)
+		assert.Equal(t, uint64(len(expectedData)), data.Size)
+		assert.Equal(t, sourceFile, data.Source)
+		assert.Equal(t, destFile, data.Dest)
 		currentBlockTransferred++
 	}
 }

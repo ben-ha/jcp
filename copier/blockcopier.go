@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+
 	discovery "github.com/ben-ha/jcp/discovery"
 )
 
@@ -57,7 +58,7 @@ func (copier BlockCopier) CopyWithProgress(source discovery.FileInformation, des
 		return CopierState{State: state.State, Error: &seekErr}
 	}
 
-	reportProgress(progress, concreteState)
+	reportProgress(progress, source, destination, concreteState)
 	var readErr *error = nil
 	blockBuffer := make([]byte, copier.BlockSize)
 	for readErr == nil {
@@ -78,7 +79,7 @@ func (copier BlockCopier) CopyWithProgress(source discovery.FileInformation, des
 			return CopierState{State: concreteState, Error: &blockDifferent}
 		}
 		concreteState.BytesTransferred += uint64(read)
-		reportProgress(progress, concreteState)
+		reportProgress(progress, source, destination, concreteState)
 	}
 
 	return CopierState{State: concreteState, Error: nil}
@@ -88,9 +89,9 @@ func (state BlockCopierState) IsDone() bool {
 	return state.Size == state.BytesTransferred
 }
 
-func reportProgress(progressChan chan<- CopierProgress, currentState BlockCopierState) {
+func reportProgress(progressChan chan<- CopierProgress, source discovery.FileInformation, dest discovery.FileInformation, currentState BlockCopierState) {
 	if progressChan == nil {
 		return
 	}
-	progressChan <- CopierProgress{Size: currentState.Size, BytesTransferred: currentState.BytesTransferred}
+	progressChan <- CopierProgress{Source: source.FullPath, Dest: dest.FullPath, Size: currentState.Size, BytesTransferred: currentState.BytesTransferred}
 }

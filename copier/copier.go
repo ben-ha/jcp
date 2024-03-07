@@ -15,6 +15,8 @@ type CopierState struct {
 }
 
 type CopierProgress struct {
+	Source           string
+	Dest             string
 	Size             uint64
 	BytesTransferred uint64
 }
