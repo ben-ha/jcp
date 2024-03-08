@@ -25,10 +25,7 @@ type UITransferMsg struct {
 type UITransfer struct {
 	CopierProgress copier.CopierProgress
 	Progress       progress.Model
-}
-
-func initialModel() UIModel {
-	return UIModel{}
+	shownCompleted bool
 }
 
 func (m UIModel) Init() tea.Cmd {
@@ -73,7 +70,7 @@ func (model UIModel) UpdateModel(msg UITransferMsg) UIModel {
 			}
 		}
 
-		if transfer.Progress.Percent() == 1 {
+		if transfer.Progress.Percent() == 1 && transfer.shownCompleted {
 			// Remove transfer if done
 			newTransfers := model.Transfers[:idx]
 			if len(model.Transfers) > (idx + 1) {
@@ -121,6 +118,10 @@ func (m UIModel) View() string {
 	for _, transfer := range m.Transfers {
 		line := pad + transfer.CopierProgress.Source + transfer.Progress.View() + transfer.CopierProgress.Dest + "\n\n"
 		str += line
+
+		if transfer.Progress.Percent() == 1 {
+			transfer.shownCompleted = true
+		}
 	}
 	return str
 }
