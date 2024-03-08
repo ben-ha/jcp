@@ -12,25 +12,26 @@ func main() {
 	src := os.Args[1]
 	dst := os.Args[2]
 
-	progressChannel, err := logic.StartCopy(src, dst, 10)
+	jcp := logic.MakeJcp(10)
+	err := jcp.StartCopy(src, dst)
 
 	if err != nil {
 		panic(fmt.Sprintf("Error: %v", err))
 	}
 
 	for {
-		update, more := <-progressChannel
+		update, more := <-jcp.ProgressChannel
 		if !more {
 			fmt.Printf("Transfer complete\n")
 			break
 		}
 		fmt.Printf("Update: %v", update)
-		if update.Error != nil {
-			if update.Error == io.EOF {
+		if update.JcpError != nil {
+			if update.JcpError == io.EOF {
 				break
 			}
 
-			panic(fmt.Sprintf("An error occurred: %v", update.Error.Error()))
+			panic(fmt.Sprintf("An error occurred: %v", update.JcpError.Error()))
 		}
 	}
 
