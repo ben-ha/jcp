@@ -81,6 +81,7 @@ func (copier BlockCopier) CopyWithProgress(source discovery.FileInformation, des
 		}
 		written, writeErr := outputFile.Write(blockBuffer[0:read])
 		if writeErr != nil {
+			reportProgress(progress, source, destination, concreteState, writeErr)
 			return CopierState{State: concreteState, Error: writeErr}
 		}
 
@@ -93,6 +94,7 @@ func (copier BlockCopier) CopyWithProgress(source discovery.FileInformation, des
 		reportProgress(progress, source, destination, concreteState, nil)
 	}
 
+	reportProgress(progress, source, destination, concreteState, io.EOF)
 	return CopierState{State: concreteState, Error: io.EOF}
 }
 

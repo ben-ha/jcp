@@ -10,8 +10,9 @@
             "request": "launch",
             "mode": "auto",
             "program": "${fileDirname}",
-            "args": "/workspaces/jcp/jcp /workspaces/jcp/jcp2",
-            "showLog": true
+            "args": "/workspaces/tempdir /workspaces/destdir",
+            "showLog": true,
+            "console": "integratedTerminal"
         }
     ]
 }

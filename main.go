@@ -4,28 +4,20 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 
 	"github.com/ben-ha/jcp/logic"
+	"github.com/ben-ha/jcp/tui"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
-func main() {
-	src := os.Args[1]
-	dst := os.Args[2]
-
-	jcp := logic.MakeJcp(10)
-	err := jcp.StartCopy(src, dst)
-
-	if err != nil {
-		panic(fmt.Sprintf("Error: %v", err))
-	}
-
+func updaterFunc(jcp logic.Jcp, ui *tea.Program) {
 	for {
 		update, more := <-jcp.ProgressChannel
 		if !more {
-			fmt.Printf("Transfer complete\n")
 			break
 		}
-		fmt.Printf("Update: %v", update)
+
 		if update.JcpError != nil {
 			if update.JcpError == io.EOF {
 				break
@@ -33,7 +25,38 @@ func main() {
 
 			panic(fmt.Sprintf("An error occurred: %v", update.JcpError.Error()))
 		}
+
+		ui.Send(tui.UITransferMsg{Progress: update.Progress})
 	}
 
-	fmt.Println("Done!")
+	ui.Quit()
+}
+
+func StartUI(prog *tea.Program, uiComplete *sync.WaitGroup) {
+	defer uiComplete.Done()
+	if _, err := prog.Run(); err != nil {
+		panic(fmt.Sprintf("Error in UI: %v", err))
+	}
+}
+
+func main() {
+	src := os.Args[1]
+	dst := os.Args[2]
+
+	jcp := logic.MakeJcp(10)
+
+	ui := tea.NewProgram(tui.UIModel{})
+	uiComplete := sync.WaitGroup{}
+	uiComplete.Add(1)
+
+	go StartUI(ui, &uiComplete)
+
+	go updaterFunc(jcp, ui)
+
+	err := jcp.StartCopy(src, dst)
+	if err != nil {
+		panic(fmt.Sprintf("Error: %v", err))
+	}
+
+	uiComplete.Wait()
 }

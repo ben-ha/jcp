@@ -40,7 +40,7 @@ func (jcp Jcp) StartCopy(src string, dest string) error {
 	}
 
 	if isDir {
-		err := jcp.startDirectoryCopy(src, dest, jcp.ConcurrencyLimit, copierProgressChannel)
+		err := jcp.startDirectoryCopy(src, dest, copierProgressChannel)
 		if err != nil {
 			return err
 		}
@@ -54,15 +54,15 @@ func (jcp Jcp) StartCopy(src string, dest string) error {
 	return nil
 }
 
-func (jcp Jcp) startDirectoryCopy(src string, dest string, concurrencyLimit uint, progressChannel chan copier.CopierProgress) error {
-	concurrencyLimiter := make(chan int, concurrencyLimit)
+func (jcp Jcp) startDirectoryCopy(src string, dest string, progressChannel chan copier.CopierProgress) error {
+	concurrencyLimiter := make(chan int, jcp.ConcurrencyLimit)
 	discoverer, err := discovery.MakeBfsDiscoverer(src)
 	if err != nil {
 		return err
 	}
 
 	srcBasePath := path.Dir(src)
-	destBasePath := path.Dir(dest)
+	destBasePath := dest
 	go func() {
 		var currentErr error = nil
 		var currentFile discovery.FileInformation
@@ -86,15 +86,15 @@ func (jcp Jcp) startDirectoryCopy(src string, dest string, concurrencyLimit uint
 
 			transferCompletion.Add(1)
 			destFile, _ := discovery.MakeFileInformation(path.Join(destBasePath, RemoveBaseDirectory(srcBasePath, currentFile.FullPath)))
-			go func() {
+			go func(currentFile discovery.FileInformation, destFile discovery.FileInformation) {
 				defer transferCompletion.Done()
 				jcp.startFileCopyByInfo(currentFile, destFile, copier.CopierState{}, progressChannel)
 				<-concurrencyLimiter
-			}()
+			}(currentFile, destFile)
 		}
 
 		transferCompletion.Wait()
-
+		jcp.reportError(io.EOF)
 		close(progressChannel)
 	}()
 
@@ -138,7 +138,10 @@ func RemoveBaseDirectory(base string, input string) string {
 func (jcp Jcp) startProcessingProgress(copierProgress chan copier.CopierProgress) {
 	go func() {
 		for {
-			msg := <-copierProgress
+			msg, more := <-copierProgress
+			if !more {
+				break
+			}
 			jcp.ProgressChannel <- JcpProgress{JcpError: nil, Progress: msg}
 		}
 	}()
