@@ -53,7 +53,7 @@ func (bfs *bfsDiscoverer) Next() (FileInformation, error) {
 		childern, _ := os.ReadDir(resultItem.FullPath)
 
 		for _, child := range childern {
-			fInfo, fInfoErr := MakeFileInformation(filepath.Join(resultItem.FullPath, child.Name()))
+			fInfo, fInfoErr := MakeFileInformationWithSymbolicLinks(filepath.Join(resultItem.FullPath, child.Name()))
 			if fInfoErr == nil {
 				bfs.State.Queue = append(bfs.State.Queue, fInfo)
 			}

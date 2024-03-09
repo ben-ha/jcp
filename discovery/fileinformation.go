@@ -18,3 +18,12 @@ func MakeFileInformation(fullPath string) (FileInformation, error) {
 
 	return FileInformation{FullPath: fullPath, Info: stat}, nil
 }
+
+func MakeFileInformationWithSymbolicLinks(fullPath string) (FileInformation, error) {
+	stat, statErr := os.Lstat(fullPath)
+	if statErr != nil {
+		return FileInformation{FullPath: fullPath, Info: nil}, statErr
+	}
+
+	return FileInformation{FullPath: fullPath, Info: stat}, nil
+}

@@ -25,7 +25,6 @@ type UITransferMsg struct {
 type UITransfer struct {
 	CopierProgress copier.CopierProgress
 	Progress       progress.Model
-	shownCompleted bool
 }
 
 func (m UIModel) Init() tea.Cmd {
@@ -43,8 +42,8 @@ func (m UIModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case UITransferMsg:
-		m = m.UpdateModel(msg)
-		return m, nil
+		m, cmd := m.UpdateModel(msg)
+		return m, cmd
 
 	// FrameMsg is sent when the progress bar wants to animate itself
 	case progress.FrameMsg:
@@ -56,45 +55,47 @@ func (m UIModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (model UIModel) UpdateModel(msg UITransferMsg) UIModel {
+func (model UIModel) UpdateModel(msg UITransferMsg) (UIModel, tea.Cmd) {
 	// Find the transfer
+	uiCommands := make([]tea.Cmd, 0)
 	transferFound := false
-	for idx, transfer := range model.Transfers {
+	transfersToKeep := make([]UITransfer, 0)
+	for _, transfer := range model.Transfers {
 		if transfer.CopierProgress.Source == msg.Progress.Source && transfer.CopierProgress.Dest == msg.Progress.Dest {
 			transferFound = true
 			transfer.CopierProgress = msg.Progress
+			var cmd tea.Cmd
 			if transfer.CopierProgress.Error == io.EOF {
-				transfer.Progress.SetPercent(1)
+				cmd = transfer.Progress.SetPercent(1)
 			} else {
-				transfer.Progress.SetPercent(float64(transfer.CopierProgress.BytesTransferred) / float64(transfer.CopierProgress.Size))
+				cmd = transfer.Progress.SetPercent(float64(transfer.CopierProgress.BytesTransferred) / float64(transfer.CopierProgress.Size))
 			}
+			uiCommands = append(uiCommands, cmd)
 		}
 
-		if transfer.Progress.Percent() == 1 && transfer.shownCompleted {
-			// Remove transfer if done
-			newTransfers := model.Transfers[:idx]
-			if len(model.Transfers) > (idx + 1) {
-				newTransfers = append(newTransfers, model.Transfers[idx+1:]...)
-			}
-			model.Transfers = newTransfers
+		if !(transfer.Progress.Percent() == 1) {
+			transfersToKeep = append(transfersToKeep, transfer)
 		}
 	}
+
+	model.Transfers = transfersToKeep
 
 	if !transferFound {
 		// Add the transfer
 		currentProgress := progress.New(progress.WithDefaultGradient())
-		currentProgress.SetPercent(float64(msg.Progress.BytesTransferred) / float64(msg.Progress.Size))
+		cmd := currentProgress.SetPercent(float64(msg.Progress.BytesTransferred) / float64(msg.Progress.Size))
+		uiCommands = append(uiCommands, cmd)
 		model.Transfers = append(model.Transfers, UITransfer{CopierProgress: msg.Progress, Progress: currentProgress})
 	}
 
-	return model
+	return model, tea.Batch(uiCommands...)
 }
 
 func (model UIModel) UpdateProgress(msg progress.FrameMsg) (UIModel, tea.Cmd) {
 	var cmds []tea.Cmd
-	for _, transfer := range model.Transfers {
-		newModel, cmd := transfer.Progress.Update(msg)
-		transfer.Progress = newModel.(progress.Model)
+	for idx := range model.Transfers {
+		newModel, cmd := model.Transfers[idx].Progress.Update(msg)
+		model.Transfers[idx].Progress = newModel.(progress.Model)
 		cmds = append(cmds, cmd)
 	}
 
@@ -116,12 +117,8 @@ func (m UIModel) View() string {
 	pad := strings.Repeat(" ", padding)
 	str := "\n"
 	for _, transfer := range m.Transfers {
-		line := pad + transfer.CopierProgress.Source + transfer.Progress.View() + transfer.CopierProgress.Dest + "\n\n"
+		line := pad + transfer.CopierProgress.Source + pad + transfer.Progress.View() + pad + transfer.CopierProgress.Dest + "\n"
 		str += line
-
-		if transfer.Progress.Percent() == 1 {
-			transfer.shownCompleted = true
-		}
 	}
 	return str
 }
