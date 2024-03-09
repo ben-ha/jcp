@@ -1,6 +1,6 @@
 module github.com/ben-ha/jcp
 
-go 1.21.7
+go 1.21
 
 require (
 	github.com/charmbracelet/bubbles v0.18.0
