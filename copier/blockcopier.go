@@ -33,10 +33,6 @@ func (copier BlockCopier) CopyWithProgress(source discovery.FileInformation, des
 		return CopierState{State: state.State, Error: castErr}
 	}
 
-	if state.State == nil {
-		concreteState = BlockCopierState{}
-	}
-
 	inputFile, inputErr := os.Open(source.FullPath)
 	if inputErr != nil {
 		reportProgress(progress, source, destination, concreteState, inputErr)
@@ -106,5 +102,5 @@ func reportProgress(progressChan chan<- CopierProgress, source discovery.FileInf
 	if progressChan == nil {
 		return
 	}
-	progressChan <- CopierProgress{Source: source.FullPath, Dest: dest.FullPath, Size: currentState.Size, BytesTransferred: currentState.BytesTransferred, OpaqueState: currentState, Error: err}
+	progressChan <- CopierProgress{Source: source.FullPath, Dest: dest.FullPath, Size: currentState.Size, BytesTransferred: currentState.BytesTransferred, OpaqueState: CopierState{Error: err, State: currentState}, Error: err}
 }

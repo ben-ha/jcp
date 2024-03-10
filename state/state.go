@@ -3,7 +3,7 @@ package state
 import (
 	"time"
 
-	"github.com/ben-ha/jcp/logic"
+	"github.com/ben-ha/jcp/copier"
 )
 
 type CopySourceKey = string
@@ -27,7 +27,32 @@ type JcpCopyState struct {
 	Percent     float64
 }
 
-func MakeNewCopyState(progress logic.JcpProgress) JcpCopyState {
-	percent := float64(progress.Progress.BytesTransferred) / float64(progress.Progress.Size)
-	return JcpCopyState{OpaqueState: progress.Progress.OpaqueState, CopierType: BlockCopier, LastUpdate: time.Now(), Percent: percent}
+type JcpProgress struct {
+	JcpError error
+	Progress copier.CopierProgress
+}
+
+func (jcpState JcpState) GetStateForTransfer(src string, dest string) copier.CopierState {
+	if jcpState.CopyStates[src] == nil {
+		return copier.CopierState{}
+	}
+
+	copierState, err := anyToType[copier.CopierState](jcpState.CopyStates[src][dest].OpaqueState)
+	if err != nil {
+		panic("Corrupted state. Please delete state.json cache and try again")
+	}
+
+	if copierState.State != nil {
+		switch jcpState.CopyStates[src][dest].CopierType {
+		case BlockCopier:
+			copierState.State, err = anyToType[copier.BlockCopierState](copierState.State)
+			if err != nil {
+				panic("Corrupted state. Please delete state.json cache and try again")
+			}
+		default:
+			panic("Corrupted state. Please delete state.json cache and try again")
+		}
+	}
+
+	return copierState
 }

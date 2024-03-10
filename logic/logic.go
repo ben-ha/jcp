@@ -11,23 +11,20 @@ import (
 
 	"github.com/ben-ha/jcp/copier"
 	"github.com/ben-ha/jcp/discovery"
+	"github.com/ben-ha/jcp/state"
 )
 
 const BLOCKSIZE = 1024 * 1024 // 1MB
 
-type JcpProgress struct {
-	JcpError error
-	Progress copier.CopierProgress
-}
-
 type Jcp struct {
-	ProgressChannel  chan JcpProgress
+	ProgressChannel  chan state.JcpProgress
 	ConcurrencyLimit uint
+	JcpState         state.JcpState
 }
 
-func MakeJcp(concurrencyLimit uint) Jcp {
-	progressChannel := make(chan JcpProgress)
-	return Jcp{ProgressChannel: progressChannel, ConcurrencyLimit: concurrencyLimit}
+func MakeJcp(concurrencyLimit uint, jcpState state.JcpState) Jcp {
+	progressChannel := make(chan state.JcpProgress)
+	return Jcp{ProgressChannel: progressChannel, ConcurrencyLimit: concurrencyLimit, JcpState: jcpState}
 }
 
 func (jcp Jcp) StartCopy(src string, dest string) error {
@@ -45,7 +42,7 @@ func (jcp Jcp) StartCopy(src string, dest string) error {
 			return err
 		}
 	} else {
-		err := jcp.startFileCopy(src, dest, copier.CopierState{}, copierProgressChannel)
+		err := jcp.startFileCopy(src, dest, copierProgressChannel)
 		if err != nil {
 			return err
 		}
@@ -88,7 +85,7 @@ func (jcp Jcp) startDirectoryCopy(src string, dest string, progressChannel chan 
 			destFile, _ := discovery.MakeFileInformation(path.Join(destBasePath, RemoveBaseDirectory(srcBasePath, currentFile.FullPath)))
 			go func(currentFile discovery.FileInformation, destFile discovery.FileInformation) {
 				defer transferCompletion.Done()
-				jcp.startFileCopyByInfo(currentFile, destFile, copier.CopierState{}, progressChannel)
+				jcp.startFileCopyByInfo(currentFile, destFile, progressChannel)
 				<-concurrencyLimiter
 			}(currentFile, destFile)
 		}
@@ -101,7 +98,7 @@ func (jcp Jcp) startDirectoryCopy(src string, dest string, progressChannel chan 
 	return nil
 }
 
-func (jcp Jcp) startFileCopy(source string, destination string, state copier.CopierState, progress chan<- copier.CopierProgress) error {
+func (jcp Jcp) startFileCopy(source string, destination string, progress chan<- copier.CopierProgress) error {
 	srcInfo, err := discovery.MakeFileInformation(source)
 	if err != nil {
 		return err
@@ -109,7 +106,7 @@ func (jcp Jcp) startFileCopy(source string, destination string, state copier.Cop
 
 	dstInfo, _ := discovery.MakeFileInformation(destination)
 	go func() {
-		newState := jcp.startFileCopyByInfo(srcInfo, dstInfo, state, progress)
+		newState := jcp.startFileCopyByInfo(srcInfo, dstInfo, progress)
 		err := newState.Error
 		if err == nil {
 			err = io.EOF
@@ -120,14 +117,15 @@ func (jcp Jcp) startFileCopy(source string, destination string, state copier.Cop
 	return nil
 }
 
-func (jcp Jcp) startFileCopyByInfo(source discovery.FileInformation, destination discovery.FileInformation, state copier.CopierState, progress chan<- copier.CopierProgress) copier.CopierState {
+func (jcp Jcp) startFileCopyByInfo(source discovery.FileInformation, destination discovery.FileInformation, progress chan<- copier.CopierProgress) copier.CopierState {
 	cp := copier.MakeBlockCopier(BLOCKSIZE)
-	newState := cp.CopyWithProgress(source, destination, state, progress)
+	copierState := jcp.JcpState.GetStateForTransfer(source.FullPath, destination.FullPath)
+	newState := cp.CopyWithProgress(source, destination, copierState, progress)
 	return newState
 }
 
 func (jcp Jcp) reportError(err error) {
-	jcp.ProgressChannel <- JcpProgress{JcpError: err, Progress: copier.CopierProgress{}}
+	jcp.ProgressChannel <- state.JcpProgress{JcpError: err, Progress: copier.CopierProgress{}}
 }
 
 func RemoveBaseDirectory(base string, input string) string {
@@ -142,7 +140,7 @@ func (jcp Jcp) startProcessingProgress(copierProgress chan copier.CopierProgress
 			if !more {
 				break
 			}
-			jcp.ProgressChannel <- JcpProgress{JcpError: nil, Progress: msg}
+			jcp.ProgressChannel <- state.JcpProgress{JcpError: nil, Progress: msg}
 		}
 	}()
 }

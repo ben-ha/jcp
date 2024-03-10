@@ -52,7 +52,7 @@ func main() {
 
 	defer state.SaveState()
 
-	jcp := logic.MakeJcp(10)
+	jcp := logic.MakeJcp(10, *state)
 
 	ui := tea.NewProgram(tui.UIModel{})
 	uiComplete := sync.WaitGroup{}

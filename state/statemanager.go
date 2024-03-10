@@ -6,8 +6,6 @@ import (
 	"path"
 	"sync"
 	"time"
-
-	"github.com/ben-ha/jcp/logic"
 )
 
 var stateManagerMutex sync.Mutex
@@ -59,7 +57,7 @@ func (copierState *JcpState) saveState(fileName string) {
 	}
 }
 
-func (copierState *JcpState) Update(progress logic.JcpProgress) {
+func (copierState *JcpState) Update(progress JcpProgress) {
 	stateManagerMutex.Lock()
 	defer stateManagerMutex.Unlock()
 
@@ -102,4 +100,25 @@ func (copyState JcpCopyState) ShouldKeep() bool {
 	}
 
 	return true
+}
+
+func MakeNewCopyState(progress JcpProgress) JcpCopyState {
+	percent := float64(progress.Progress.BytesTransferred) / float64(progress.Progress.Size)
+	return JcpCopyState{OpaqueState: progress.Progress.OpaqueState, CopierType: BlockCopier, LastUpdate: time.Now(), Percent: percent}
+}
+
+func anyToType[T any](input any) (T, error) {
+	var empty T
+	jsonVal, err := json.Marshal(input)
+	if err != nil {
+		return empty, err
+	}
+
+	var obj T
+	err = json.Unmarshal(jsonVal, &obj)
+	if err != nil {
+		return empty, err
+	}
+
+	return obj, nil
 }
