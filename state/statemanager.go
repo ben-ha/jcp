@@ -35,7 +35,7 @@ func InitializeState() (*JcpState, error) {
 
 func loadState(fileName string) *JcpState {
 	data, err := os.ReadFile(fileName)
-	loadedState := &JcpState{}
+	loadedState := &JcpState{CopyStates: make(map[CopySourceKey]map[CopyDestinationKey]JcpCopyState)}
 	if err == nil {
 		json.Unmarshal(data, loadedState)
 	}
@@ -65,10 +65,10 @@ func (copierState *JcpState) Update(progress logic.JcpProgress) {
 
 	newState := MakeNewCopyState(progress)
 	if copierState.CopyStates[progress.Progress.Source] == nil {
-		copierState.CopyStates[progress.Progress.Dest] = map[CopyDestinationKey]JcpCopyState{}
+		copierState.CopyStates[progress.Progress.Source] = map[CopyDestinationKey]JcpCopyState{}
 	}
 
-	copierState.CopyStates[progress.Progress.Source][progress.Progress.Source] = newState
+	copierState.CopyStates[progress.Progress.Source][progress.Progress.Dest] = newState
 }
 
 func (copierState *JcpState) Clean() {
@@ -78,6 +78,10 @@ func (copierState *JcpState) Clean() {
 	newStates := make(map[CopySourceKey]map[CopyDestinationKey]JcpCopyState)
 
 	for src := range copierState.CopyStates {
+		if newStates[src] == nil {
+			newStates[src] = make(map[CopyDestinationKey]JcpCopyState)
+		}
+
 		for dest := range copierState.CopyStates[src] {
 			if copierState.CopyStates[src][dest].ShouldKeep() {
 				newStates[src][dest] = copierState.CopyStates[src][dest]

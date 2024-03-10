@@ -29,5 +29,5 @@ type JcpCopyState struct {
 
 func MakeNewCopyState(progress logic.JcpProgress) JcpCopyState {
 	percent := float64(progress.Progress.BytesTransferred) / float64(progress.Progress.Size)
-	return JcpCopyState{OpaqueState: progress.OpaqueState, CopierType: BlockCopier, LastUpdate: time.Now(), Percent: percent}
+	return JcpCopyState{OpaqueState: progress.Progress.OpaqueState, CopierType: BlockCopier, LastUpdate: time.Now(), Percent: percent}
 }

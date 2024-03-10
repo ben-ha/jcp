@@ -3,6 +3,7 @@ package discovery
 import (
 	"io/fs"
 	"os"
+	"path/filepath"
 )
 
 type FileInformation struct {
@@ -10,20 +11,28 @@ type FileInformation struct {
 	Info     fs.FileInfo
 }
 
-func MakeFileInformation(fullPath string) (FileInformation, error) {
-	stat, statErr := os.Stat(fullPath)
+func MakeFileInformation(path string) (FileInformation, error) {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return FileInformation{FullPath: path, Info: nil}, err
+	}
+	stat, statErr := os.Stat(absPath)
 	if statErr != nil {
-		return FileInformation{FullPath: fullPath, Info: nil}, statErr
+		return FileInformation{FullPath: absPath, Info: nil}, statErr
 	}
 
-	return FileInformation{FullPath: fullPath, Info: stat}, nil
+	return FileInformation{FullPath: absPath, Info: stat}, nil
 }
 
-func MakeFileInformationWithSymbolicLinks(fullPath string) (FileInformation, error) {
-	stat, statErr := os.Lstat(fullPath)
+func MakeFileInformationWithSymbolicLinks(path string) (FileInformation, error) {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return FileInformation{FullPath: path, Info: nil}, err
+	}
+	stat, statErr := os.Lstat(absPath)
 	if statErr != nil {
-		return FileInformation{FullPath: fullPath, Info: nil}, statErr
+		return FileInformation{FullPath: absPath, Info: nil}, statErr
 	}
 
-	return FileInformation{FullPath: fullPath, Info: stat}, nil
+	return FileInformation{FullPath: absPath, Info: stat}, nil
 }

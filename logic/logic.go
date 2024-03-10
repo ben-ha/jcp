@@ -16,9 +16,8 @@ import (
 const BLOCKSIZE = 1024 * 1024 // 1MB
 
 type JcpProgress struct {
-	JcpError    error
-	Progress    copier.CopierProgress
-	OpaqueState any
+	JcpError error
+	Progress copier.CopierProgress
 }
 
 type Jcp struct {
