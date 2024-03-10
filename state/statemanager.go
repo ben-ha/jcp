@@ -47,6 +47,7 @@ func loadState(fileName string) *JcpState {
 }
 
 func (copierState *JcpState) SaveState() {
+	copierState.Clean()
 	copierState.saveState(copierState.StatePath)
 }
 
@@ -78,11 +79,23 @@ func (copierState *JcpState) Clean() {
 
 	for src := range copierState.CopyStates {
 		for dest := range copierState.CopyStates[src] {
-			if copierState.CopyStates[src][dest].LastUpdate.After(time.Now().AddDate(0, 0, -ValidStateWindowInDays)) {
+			if copierState.CopyStates[src][dest].ShouldKeep() {
 				newStates[src][dest] = copierState.CopyStates[src][dest]
 			}
 		}
 	}
 
 	copierState.CopyStates = newStates
+}
+
+func (copyState JcpCopyState) ShouldKeep() bool {
+	if copyState.LastUpdate.Before(time.Now().AddDate(0, 0, -ValidStateWindowInDays)) {
+		return false
+	}
+
+	if copyState.Percent == 1 {
+		return false
+	}
+
+	return true
 }
