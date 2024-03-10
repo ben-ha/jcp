@@ -11,6 +11,7 @@ type CopyDestinationKey = string
 
 type JcpState struct {
 	CopyStates map[CopySourceKey](map[CopyDestinationKey]JcpCopyState)
+	StatePath  string
 }
 
 type CopierType int

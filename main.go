@@ -7,11 +7,12 @@ import (
 	"sync"
 
 	"github.com/ben-ha/jcp/logic"
+	"github.com/ben-ha/jcp/state"
 	"github.com/ben-ha/jcp/tui"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func updaterFunc(jcp logic.Jcp, ui *tea.Program) {
+func updaterFunc(jcp logic.Jcp, ui *tea.Program, state *state.JcpState) {
 	for {
 		update, more := <-jcp.ProgressChannel
 		if !more {
@@ -26,6 +27,7 @@ func updaterFunc(jcp logic.Jcp, ui *tea.Program) {
 			panic(fmt.Sprintf("An error occurred: %v", update.JcpError.Error()))
 		}
 
+		state.Update(update)
 		ui.Send(tui.UITransferMsg{Progress: update.Progress})
 	}
 
@@ -43,6 +45,13 @@ func main() {
 	src := os.Args[1]
 	dst := os.Args[2]
 
+	state, err := state.InitializeState()
+	if err != nil {
+		panic(fmt.Sprintf("State: %v", err))
+	}
+
+	defer state.SaveState()
+
 	jcp := logic.MakeJcp(10)
 
 	ui := tea.NewProgram(tui.UIModel{})
@@ -51,9 +60,9 @@ func main() {
 
 	go StartUI(ui, &uiComplete)
 
-	go updaterFunc(jcp, ui)
+	go updaterFunc(jcp, ui, state)
 
-	err := jcp.StartCopy(src, dst)
+	err = jcp.StartCopy(src, dst)
 	if err != nil {
 		panic(fmt.Sprintf("Error: %v", err))
 	}

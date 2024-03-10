@@ -3,6 +3,7 @@ package state
 import (
 	"encoding/json"
 	"os"
+	"path"
 	"sync"
 	"time"
 
@@ -13,7 +14,26 @@ var stateManagerMutex sync.Mutex
 
 const ValidStateWindowInDays = 1
 
-func LoadState(fileName string) *JcpState {
+const JcpStateDirectoryName = "jcp"
+const JcpStateFileName = "state.json"
+
+func InitializeState() (*JcpState, error) {
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		return nil, err
+	}
+
+	jcpDir := path.Join(cacheDir, JcpStateDirectoryName)
+
+	err = os.Mkdir(jcpDir, os.ModePerm)
+	if !os.IsExist(err) {
+		return nil, err
+	}
+
+	return loadState(path.Join(jcpDir, JcpStateFileName)), nil
+}
+
+func loadState(fileName string) *JcpState {
 	data, err := os.ReadFile(fileName)
 	loadedState := &JcpState{}
 	if err == nil {
@@ -21,11 +41,16 @@ func LoadState(fileName string) *JcpState {
 	}
 
 	loadedState.Clean()
+	loadedState.StatePath = fileName
 
 	return loadedState
 }
 
-func (copierState *JcpState) Save(fileName string) {
+func (copierState *JcpState) SaveState() {
+	copierState.saveState(copierState.StatePath)
+}
+
+func (copierState *JcpState) saveState(fileName string) {
 	serialized, err := json.Marshal(copierState)
 
 	if err == nil {
