@@ -1,6 +1,7 @@
 package copier
 
 import (
+	"io"
 	"os"
 	"testing"
 
@@ -17,9 +18,8 @@ func TestCopyFile(t *testing.T) {
 	sourceInfo, _ := discovery.MakeFileInformation(sourceFile)
 	newState := copier.Copy(sourceInfo, discovery.FileInformation{FullPath: destFile, Info: nil}, CopierState{State: BlockCopierState{}})
 
-	if newState.Error != nil {
-		t.Fatalf("Unexpected error occurred: %v", newState.Error.Error())
-	}
+	assert.NotNil(t, newState.Error)
+	assert.Equal(t, newState.Error, io.EOF)
 
 	actualDataBytes, _ := os.ReadFile(destFile)
 	actualData := string(actualDataBytes)
@@ -39,9 +39,9 @@ func TestCopyFileProgress(t *testing.T) {
 	sourceInfo, _ := discovery.MakeFileInformation(sourceFile)
 	newState := copier.CopyWithProgress(sourceInfo, discovery.FileInformation{FullPath: destFile, Info: nil}, CopierState{State: BlockCopierState{}}, progressChannel)
 
-	if newState.Error != nil {
-		t.Fatalf("Unexpected error occurred: %v", newState.Error.Error())
-	}
+	assert.NotNil(t, newState.Error)
+	assert.Equal(t, newState.Error, io.EOF)
+	close(progressChannel)
 
 	currentBlockTransferred := uint64(0)
 	for data := range progressChannel {
@@ -65,9 +65,8 @@ func TestResumeCopy(t *testing.T) {
 	sourceInfo, _ := discovery.MakeFileInformation(sourceFile)
 	newState := copier.Copy(sourceInfo, discovery.FileInformation{FullPath: partialDestFile, Info: MakeFakeDestinationFileInfo(partialDestFile, 3)}, copierState)
 
-	if newState.Error != nil {
-		t.Fatalf("Unexpected error occurred: %v", newState.Error.Error())
-	}
+	assert.NotNil(t, newState.Error)
+	assert.Equal(t, newState.Error, io.EOF)
 
 	actualDataBytes, _ := os.ReadFile(partialDestFile)
 	actualData := string(actualDataBytes)
