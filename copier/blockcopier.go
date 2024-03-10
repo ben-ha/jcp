@@ -106,5 +106,5 @@ func reportProgress(progressChan chan<- CopierProgress, source discovery.FileInf
 	if progressChan == nil {
 		return
 	}
-	progressChan <- CopierProgress{Source: source.FullPath, Dest: dest.FullPath, Size: currentState.Size, BytesTransferred: currentState.BytesTransferred, Error: err}
+	progressChan <- CopierProgress{Source: source.FullPath, Dest: dest.FullPath, Size: currentState.Size, BytesTransferred: currentState.BytesTransferred, OpaqueState: currentState, Error: err}
 }

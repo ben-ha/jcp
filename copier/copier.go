@@ -20,4 +20,5 @@ type CopierProgress struct {
 	Size             uint64
 	BytesTransferred uint64
 	Error            error
+	OpaqueState      any
 }

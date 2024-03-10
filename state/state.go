@@ -1,21 +1,30 @@
 package state
 
-type CopierState struct {
-	CopyStates map[CopySourceKey](map[CopyDestinationKey]CopyState)
-}
+import (
+	"time"
+
+	"github.com/ben-ha/jcp/logic"
+)
 
 type CopySourceKey = string
 type CopyDestinationKey = string
-type FileStateSourceKey = string
-type FileStateDestinationKey = string
 
-type CopyState struct {
-	ActiveCopies   map[FileStateSourceKey]map[FileStateDestinationKey]FileCopyState
-	DiscoveryQueue []string
+type JcpState struct {
+	CopyStates map[CopySourceKey](map[CopyDestinationKey]JcpCopyState)
 }
 
-type FileCopyState struct {
-	Size             uint64
-	BytesTransferred uint64
-	err              error
+type CopierType int
+
+const (
+	BlockCopier CopierType = 1
+)
+
+type JcpCopyState struct {
+	OpaqueState any
+	CopierType  CopierType
+	LastUpdate  time.Time
+}
+
+func MakeNewCopyState(progress logic.JcpProgress) JcpCopyState {
+	return JcpCopyState{OpaqueState: progress.OpaqueState, CopierType: BlockCopier, LastUpdate: time.Now()}
 }
