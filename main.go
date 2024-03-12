@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/ben-ha/jcp/logic"
+	"github.com/ben-ha/jcp/sleepless"
 	"github.com/ben-ha/jcp/state"
 	"github.com/ben-ha/jcp/tui"
 	tea "github.com/charmbracelet/bubbletea"
@@ -57,6 +58,9 @@ func main() {
 	ui := tea.NewProgram(tui.UIModel{})
 	uiComplete := sync.WaitGroup{}
 	uiComplete.Add(1)
+
+	sleepEnabler, _ := sleepless.PreventSleep("jcp", "copy in progress")
+	defer sleepEnabler()
 
 	go StartUI(ui, &uiComplete)
 

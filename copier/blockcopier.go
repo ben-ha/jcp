@@ -26,6 +26,12 @@ func (copier BlockCopier) Copy(source discovery.FileInformation, destination dis
 }
 
 func (copier BlockCopier) CopyWithProgress(source discovery.FileInformation, destination discovery.FileInformation, state CopierState, progress chan<- CopierProgress) CopierState {
+	if !IsCopyRequired(source, destination) {
+		completedState := BlockCopierState{Size: uint64(source.Info.Size()), BytesTransferred: uint64(source.Info.Size())}
+		reportProgress(progress, source, destination, completedState, io.EOF)
+		return CopierState{State: state.State, Error: io.EOF}
+	}
+
 	concreteState, castOK := state.State.(BlockCopierState)
 	if !castOK && state.State != nil {
 		castErr := fmt.Errorf("converting to BlockCopierState failed")

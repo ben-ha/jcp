@@ -22,3 +22,11 @@ type CopierProgress struct {
 	Error            error
 	OpaqueState      any
 }
+
+func IsCopyRequired(source discovery.FileInformation, destination discovery.FileInformation) bool {
+	if source.Info == nil || destination.Info == nil {
+		return true
+	}
+
+	return source.Info.Size() != destination.Info.Size()
+}
