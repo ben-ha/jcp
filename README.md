@@ -33,3 +33,7 @@ Download the jcp package from the latest release and install.
 ## Limitations
 1. jcp is not a sync tool. It does not verify the transfer, detect errors in partial transfers.
 2. jcp currently **does not** process symlinks.
+
+## Contributing
+
+If you find this project useful and want to contribute and make it better, you are most welcome!
