@@ -24,7 +24,7 @@ func InitializeState() (*JcpState, error) {
 	jcpDir := path.Join(cacheDir, JcpStateDirectoryName)
 
 	err = os.Mkdir(jcpDir, os.ModePerm)
-	if !os.IsExist(err) {
+	if err != nil && !os.IsExist(err) {
 		return nil, err
 	}
 

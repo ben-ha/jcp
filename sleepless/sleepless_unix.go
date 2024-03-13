@@ -11,7 +11,7 @@ func PreventSleep(appName string, reason string) (func(), error) {
 	}
 
 	var cookie uint
-	err = conn.BusObject().Call("org.gnome.SessionManager.Inhibit", 0, appName, 0, reason, 0).Store(&cookie)
+	err = conn.BusObject().Call("org.gnome.SessionManager.Inhibit", 0, appName, uint(0), reason, uint(0)).Store(&cookie)
 	if err != nil {
 		return func() {}, err
 	}
