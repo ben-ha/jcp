@@ -43,6 +43,11 @@ func StartUI(prog *tea.Program, uiComplete *sync.WaitGroup) {
 }
 
 func main() {
+	if len(os.Args) != 3 {
+		fmt.Printf("Usage: %v <src> <dest>\n", os.Args[0])
+		return
+	}
+
 	src := os.Args[1]
 	dst := os.Args[2]
 
