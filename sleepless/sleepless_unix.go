@@ -11,13 +11,23 @@ func PreventSleep(appName string, reason string) (func(), error) {
 	}
 
 	var cookie uint
-	err = conn.BusObject().Call("org.gnome.SessionManager.Inhibit", 0, appName, uint(0), reason, uint(0)).Store(&cookie)
-	if err != nil {
-		return func() {}, err
-	}
+	objectPath := dbus.ObjectPath("/org/gnome/SessionManager")
+	ifaceName := "org.gnome.SessionManager"
+
+	conn.Object("org.gnome.SessionManager", objectPath).Call(
+		ifaceName+".Inhibit",
+		0,                     // Flags
+		"jcp",                 // App Name
+		uint32(0),             // Flags
+		"Copy is in progress", // Reason
+		uint32(1),             // Flags
+	).Store(&cookie)
 
 	return func() {
-		conn.BusObject().Call("org.gnome.SessionManager.Uninhibit", 0, cookie)
+		conn.Object("org.gnome.SessionManager", objectPath).Call(
+			ifaceName+".Uninhibit",
+			0, // Flags
+			cookie)
 		conn.Close()
 	}, nil
 }
