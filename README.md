@@ -1,6 +1,6 @@
 # jcp
 
-Just cp - A simple cp implementation for the average joe working on Linux or Mac.
+Just cp - A simple cp implementation for the average Joe working on Linux or Mac, who occasionally needs to copy files.
 
 
 ## Features
@@ -31,7 +31,7 @@ Download the AppImage from the latest release and run.
 Download the jcp package from the latest release and install.
 
 ## Limitations
-1. jcp is not a sync tool. It does not verify the transfer, detect errors in partial transfers.
+1. jcp is not a sync tool. It does not verify the transfer, detect errors in partial transfers or runs in the background and keeps the directories synced.
 2. jcp currently **does not** process symlinks.
 
 ## Contributing
