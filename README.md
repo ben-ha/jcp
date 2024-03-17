@@ -25,10 +25,10 @@ If `<source>` is a directory, it is copied to `<dest>/<source>` recursively.
 ## Installation
 
 ### Linux
-Download the AppImage from the latest release and run.
+Download the jcp binary from the latest release and run.
 
 ### MacOS
-Download the jcp package from the latest release and install.
+Download the jcp binary from the latest release and run.
 
 ## Limitations
 1. jcp is not a sync tool. It does not verify the transfer, detect errors in partial transfers or runs in the background and keeps the directories synced.
