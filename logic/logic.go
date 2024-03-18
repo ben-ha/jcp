@@ -36,12 +36,20 @@ func (jcp Jcp) StartCopy(src string, dest string) error {
 		return isDirErr
 	}
 
+	isDirDest, isDirErr := IsDirectory(dest)
+	if isDirErr != nil {
+		return isDirErr
+	}
+
 	if isDir {
 		err := jcp.startDirectoryCopy(src, dest, copierProgressChannel)
 		if err != nil {
 			return err
 		}
 	} else {
+		if isDirDest {
+			dest = path.Join(dest, path.Base(src))
+		}
 		err := jcp.startFileCopy(src, dest, copierProgressChannel)
 		if err != nil {
 			return err
