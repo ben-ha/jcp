@@ -39,6 +39,11 @@ func (copier BlockCopier) CopyWithProgress(source discovery.FileInformation, des
 		return CopierState{State: state.State, Error: castErr}
 	}
 
+	concreteState.Size = uint64(source.Info.Size())
+	if (destination.Info == nil) || (uint64(destination.Info.Size()) < concreteState.BytesTransferred) {
+		concreteState.BytesTransferred = 0
+	}
+
 	inputFile, inputErr := os.Open(source.FullPath)
 	if inputErr != nil {
 		reportProgress(progress, source, destination, concreteState, inputErr)
@@ -46,8 +51,6 @@ func (copier BlockCopier) CopyWithProgress(source discovery.FileInformation, des
 	}
 
 	defer inputFile.Close()
-
-	concreteState.Size = uint64(source.Info.Size())
 
 	outputFile, outputErr := os.OpenFile(destination.FullPath, os.O_CREATE|os.O_RDWR, os.ModePerm)
 	if outputErr != nil {

@@ -76,6 +76,29 @@ func TestResumeCopy(t *testing.T) {
 	}
 }
 
+func TestResumeDeletedFileCopy(t *testing.T) {
+	expectedData := "Hello world!"
+	partialData := expectedData[0:3]
+	sourceFile := prepareFile(expectedData)
+	destFile := prepareTemporaryFileName()
+
+	copier := BlockCopier{BlockSize: 1}
+	copierState := CopierState{State: BlockCopierState{Size: uint64(len(expectedData)), BytesTransferred: uint64(len(partialData))}}
+
+	sourceInfo, _ := discovery.MakeFileInformation(sourceFile)
+	newState := copier.Copy(sourceInfo, discovery.FileInformation{FullPath: destFile, Info: MakeFakeDestinationFileInfo(destFile, 0)}, copierState)
+
+	assert.NotNil(t, newState.Error)
+	assert.Equal(t, newState.Error, io.EOF)
+
+	actualDataBytes, _ := os.ReadFile(destFile)
+	actualData := string(actualDataBytes)
+
+	if actualData != expectedData {
+		t.Fatalf("Received different data. Expected=%v, Actual=%v", expectedData, actualData)
+	}
+}
+
 func prepareFile(data string) string {
 	f, _ := os.CreateTemp("", "block_copier_test")
 	_, _ = f.WriteString(data)
