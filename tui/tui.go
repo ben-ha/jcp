@@ -1,18 +1,24 @@
 package tui
 
 import (
+	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/ben-ha/jcp/copier"
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
+	humanize "github.com/dustin/go-humanize"
 )
 
 const (
-	padding  = 2
-	maxWidth = 80
+	padding         = 2
+	maxWidth        = 80
+	speedWindowSize = time.Second
 )
+
+type tickMsg time.Time
 
 type UIModel struct {
 	Transfers []UITransfer
@@ -23,13 +29,19 @@ type UITransferMsg struct {
 }
 
 type UITransfer struct {
-	CopierProgress copier.CopierProgress
-	Progress       progress.Model
+	CopierProgress      copier.CopierProgress
+	Progress            progress.Model
+	WindowStart         Sample
+	SpeedBytesPerSecond float64
+}
+
+type Sample struct {
+	SampleTime time.Time
+	Bytes      uint64
 }
 
 func (m UIModel) Init() tea.Cmd {
-	// Just return `nil`, which means "no I/O right now, please."
-	return nil
+	return tickCmd()
 }
 
 func (m UIModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -49,6 +61,10 @@ func (m UIModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case progress.FrameMsg:
 		m, cmd := m.UpdateProgress(msg)
 		return m, cmd
+
+	case tickMsg:
+		m := m.UpdateSpeed(msg)
+		return m, tickCmd()
 
 	default:
 		return m, nil
@@ -113,12 +129,34 @@ func (model UIModel) UpdateWidth(msg tea.WindowSizeMsg) UIModel {
 	return model
 }
 
+func (model UIModel) UpdateSpeed(msg tickMsg) UIModel {
+	for idx := range model.Transfers {
+		updatedSample := Sample{SampleTime: time.Now(), Bytes: model.Transfers[idx].CopierProgress.BytesTransferred}
+		startOfWindowBytes := model.Transfers[idx].WindowStart.Bytes
+		startOfWindowTime := model.Transfers[idx].WindowStart.SampleTime
+		model.Transfers[idx].SpeedBytesPerSecond = float64((updatedSample.Bytes - startOfWindowBytes)) / (updatedSample.SampleTime.Sub(startOfWindowTime).Seconds())
+		model.Transfers[idx].WindowStart = updatedSample
+	}
+
+	return model
+}
+
 func (m UIModel) View() string {
 	pad := strings.Repeat(" ", padding)
 	str := "\n"
+	var totalSpeed float64
 	for _, transfer := range m.Transfers {
+		totalSpeed += transfer.SpeedBytesPerSecond
 		line := pad + transfer.CopierProgress.Source + pad + transfer.Progress.View() + pad + transfer.CopierProgress.Dest + "\n"
 		str += line
 	}
+
+	str += pad + fmt.Sprintf("Estimated speed: %v/s\n", humanize.Bytes(uint64(totalSpeed)))
 	return str
+}
+
+func tickCmd() tea.Cmd {
+	return tea.Tick(time.Second*1, func(t time.Time) tea.Msg {
+		return tickMsg(t)
+	})
 }
