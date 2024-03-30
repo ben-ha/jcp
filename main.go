@@ -14,6 +14,8 @@ import (
 )
 
 func updaterFunc(jcp logic.Jcp, ui *tea.Program, state *state.JcpState) {
+	defer ui.Quit()
+
 	for {
 		update, more := <-jcp.ProgressChannel
 		if !more {
@@ -22,17 +24,16 @@ func updaterFunc(jcp logic.Jcp, ui *tea.Program, state *state.JcpState) {
 
 		if update.JcpError != nil {
 			if update.JcpError == io.EOF {
-				break
+				ui.Send(tui.UIErrorMessage("Done"))
+			} else {
+				ui.Send(tui.UIErrorMessage(update.JcpError.Error()))
 			}
-
-			panic(fmt.Sprintf("An error occurred: %v", update.JcpError.Error()))
+			break
 		}
 
 		state.Update(update)
 		ui.Send(tui.UITransferMsg{Progress: update.Progress})
 	}
-
-	ui.Quit()
 }
 
 func StartUI(prog *tea.Program, uiComplete *sync.WaitGroup) {
@@ -71,10 +72,7 @@ func main() {
 
 	go updaterFunc(jcp, ui, state)
 
-	err = jcp.StartCopy(src, dst)
-	if err != nil {
-		panic(fmt.Sprintf("Error: %v", err))
-	}
+	jcp.StartCopy(src, dst)
 
 	uiComplete.Wait()
 }

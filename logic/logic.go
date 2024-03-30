@@ -1,7 +1,6 @@
 package logic
 
 import (
-	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -33,6 +32,7 @@ func (jcp Jcp) StartCopy(src string, dest string) error {
 
 	isDir, isDirErr := IsDirectory(src)
 	if isDirErr != nil {
+		jcp.reportError(isDirErr)
 		return isDirErr
 	}
 
@@ -41,6 +41,7 @@ func (jcp Jcp) StartCopy(src string, dest string) error {
 	if isDir {
 		err := jcp.startDirectoryCopy(src, dest, copierProgressChannel)
 		if err != nil {
+			jcp.reportError(err)
 			return err
 		}
 	} else {
@@ -49,6 +50,7 @@ func (jcp Jcp) StartCopy(src string, dest string) error {
 		}
 		err := jcp.startFileCopy(src, dest, copierProgressChannel)
 		if err != nil {
+			jcp.reportError(err)
 			return err
 		}
 	}
@@ -73,7 +75,7 @@ func (jcp Jcp) startDirectoryCopy(src string, dest string, progressChannel chan 
 			currentFile, currentErr = discoverer.Next()
 			if currentErr != nil {
 				if currentErr != io.EOF {
-					panic(fmt.Sprintf("Failed: %v", currentErr))
+					jcp.reportError(currentErr)
 				}
 
 				break

@@ -22,11 +22,14 @@ type tickMsg time.Time
 
 type UIModel struct {
 	Transfers []UITransfer
+	Error     string
 }
 
 type UITransferMsg struct {
 	Progress copier.CopierProgress
 }
+
+type UIErrorMessage string
 
 type UITransfer struct {
 	CopierProgress      copier.CopierProgress
@@ -65,6 +68,10 @@ func (m UIModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tickMsg:
 		m := m.UpdateSpeed(msg)
 		return m, tickCmd()
+
+	case UIErrorMessage:
+		m.Error = string(msg)
+		return m, nil
 
 	default:
 		return m, nil
@@ -143,7 +150,12 @@ func (model UIModel) UpdateSpeed(msg tickMsg) UIModel {
 
 func (m UIModel) View() string {
 	pad := strings.Repeat(" ", padding)
-	str := "\n"
+	str := ""
+	if m.Error != "" {
+		str += m.Error + "\n"
+		return str
+	}
+
 	var totalSpeed float64
 	for _, transfer := range m.Transfers {
 		totalSpeed += transfer.SpeedBytesPerSecond
