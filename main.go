@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"sync"
 
 	"github.com/ben-ha/jcp/logic"
@@ -45,6 +46,7 @@ func StartUI(prog *tea.Program, uiComplete *sync.WaitGroup) {
 
 func main() {
 	if len(os.Args) != 3 {
+		fmt.Printf("Jcp %s\n", runtime.Version())
 		fmt.Printf("Usage: %v <src> <dest>\n", os.Args[0])
 		return
 	}
