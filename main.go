@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"runtime"
 	"sync"
 
 	"github.com/ben-ha/jcp/logic"
@@ -13,6 +12,8 @@ import (
 	"github.com/ben-ha/jcp/tui"
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+var Version string = "dev"
 
 func updaterFunc(jcp logic.Jcp, ui *tea.Program, state *state.JcpState) {
 	defer ui.Quit()
@@ -46,7 +47,7 @@ func StartUI(prog *tea.Program, uiComplete *sync.WaitGroup) {
 
 func main() {
 	if len(os.Args) != 3 {
-		fmt.Printf("Jcp %s\n", runtime.Version())
+		fmt.Printf("Jcp %s\n", Version)
 		fmt.Printf("Usage: %v <src> <dest>\n", os.Args[0])
 		return
 	}
